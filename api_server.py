@@ -17,6 +17,7 @@ from app import predict_toxicity, batch_predict_toxicity, load_model
 app = Flask(__name__)
 
 # Configuration for Babel
+app.config['JSON_AS_ASCII'] = False 
 app.config['BABEL_DEFAULT_LOCALE'] = 'ja_JP'
 app.config['BABEL_TRANSLATION_DIRECTORIES'] = 'translations'
 
