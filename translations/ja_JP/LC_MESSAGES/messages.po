@@ -1,0 +1,76 @@
+# Japanese translations for BlockWordAI
+# Copyright (C) 2025
+# This file is distributed under the same license as the BlockWordAI project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: BlockWordAI 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-10-18 15:00+0900\n"
+"PO-Revision-Date: 2025-10-18 15:00+0900\n"
+"Last-Translator: BlockWordAI Team\n"
+"Language: ja_JP\n"
+"Language-Team: ja_JP <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.12.1\n"
+
+#: api_server.py:28
+msgid "BlockWordAI - Japanese Toxicity Detection API"
+msgstr "BlockWordAI - 日本語毒性検出API"
+
+#: api_server.py:31
+msgid "Single text toxicity detection"
+msgstr "単一テキストの毒性検出"
+
+#: api_server.py:32
+msgid "Batch toxicity detection"
+msgstr "一括毒性検出"
+
+#: api_server.py:33
+msgid "Health check"
+msgstr "ヘルスチェック"
+
+#: api_server.py:57
+msgid "Missing 'text' field in request body"
+msgstr "'text' フィールドがリクエストボディにありません"
+
+#: api_server.py:62
+msgid "'text' field must be a string"
+msgstr "'text' フィールドは文字列である必要があります"
+
+#: api_server.py:67
+msgid "'text' field cannot be empty"
+msgstr "'text' フィールドは空にできません"
+
+#: api_server.py:77
+#, python-format
+msgid "Internal server error: %(error)s"
+msgstr "内部サーバーエラー: %(error)s"
+
+#: api_server.py:97
+msgid "Missing 'texts' field in request body"
+msgstr "'texts' フィールドがリクエストボディにありません"
+
+#: api_server.py:102
+msgid "'texts' field must be a list"
+msgstr "'texts' フィールドはリストである必要があります"
+
+#: api_server.py:107
+msgid "'texts' list cannot be empty"
+msgstr "'texts' リストは空にできません"
+
+#: api_server.py:115
+#, python-format
+msgid "All predictions failed: %(error_list)s"
+msgstr "すべての予測に失敗しました: %(error_list)s"
+
+#: api_server.py:132
+msgid "healthy"
+msgstr "正常"
+
+#: api_server.py:136
+msgid "unhealthy"
+msgstr "異常"

@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  blockwordai:
+    build: .
+    container_name: blockwordai
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./train:/app/train
+    environment:
+      - PYTHONPATH=/app
+      - BLOCKWORDAI_LANGUAGE=ja_JP
+      - LANG=ja_JP.UTF-8
+      - LANGUAGE=ja_JP:ja
+      - LC_ALL=ja_JP.UTF-8

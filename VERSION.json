@@ -1,0 +1,7 @@
+{
+  "version": "1.0.0",
+  "name": "BlockWordAI",
+  "description": "Japanese Toxicity Detection System",
+  "author": "BlockWordAI Team",
+  "license": "MIT"
+}

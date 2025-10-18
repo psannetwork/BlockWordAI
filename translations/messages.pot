@@ -1,0 +1,73 @@
+# Translations template for BlockWordAI
+# Copyright (C) 2025
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: BlockWordAI 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-10-18 15:00+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.12.1\n"
+
+#: api_server.py:28
+msgid "BlockWordAI - Japanese Toxicity Detection API"
+msgstr ""
+
+#: api_server.py:31
+msgid "Single text toxicity detection"
+msgstr ""
+
+#: api_server.py:32
+msgid "Batch toxicity detection"
+msgstr ""
+
+#: api_server.py:33
+msgid "Health check"
+msgstr ""
+
+#: api_server.py:57
+msgid "Missing 'text' field in request body"
+msgstr ""
+
+#: api_server.py:62
+msgid "'text' field must be a string"
+msgstr ""
+
+#: api_server.py:67
+msgid "'text' field cannot be empty"
+msgstr ""
+
+#: api_server.py:77
+#, python-format
+msgid "Internal server error: %(error)s"
+msgstr ""
+
+#: api_server.py:97
+msgid "Missing 'texts' field in request body"
+msgstr ""
+
+#: api_server.py:102
+msgid "'texts' field must be a list"
+msgstr ""
+
+#: api_server.py:107
+msgid "'texts' list cannot be empty"
+msgstr ""
+
+#: api_server.py:115
+#, python-format
+msgid "All predictions failed: %(error_list)s"
+msgstr ""
+
+#: api_server.py:132
+msgid "healthy"
+msgstr ""
+
+#: api_server.py:136
+msgid "unhealthy"
+msgstr ""
