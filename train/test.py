@@ -7,7 +7,7 @@ drive.mount('/content/drive')
 
 # 2. 必要ライブラリのインストール
 # fugashi と、fugashiが動作するための辞書 unidic-lite を追加
-#!pip install onnxruntime transformers fugashi unidic-lite
+#!pip install onnxruntime transformers fugashi unidic-lite torch onnx
 
 # 3. 最新の学習済みモデルディレクトリを自動検出
 import os
@@ -26,8 +26,37 @@ print(f"✅ 最新モデルディレクトリ: {latest_dir}")
 model_file = f"{latest_dir}/toxic-bert-jp.onnx"
 tokenizer_config_file = f"{latest_dir}/tokenizer_config.json"
 
+# ONNXファイルが存在しない場合は変換を実行
 if not os.path.exists(model_file):
-    raise FileNotFoundError(f"❌ ONNXファイルがありません: {model_file}")
+    print("🔄 ONNXファイルが見つかりませんでした。変換を実行します...")
+    import torch
+    from transformers import AutoModelForSequenceClassification
+
+    # モデルの読み込み
+    model = AutoModelForSequenceClassification.from_pretrained(latest_dir)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device).eval()
+
+    # ダミー入力の準備
+    dummy_input_ids = torch.randint(1, 1000, (1, 128)).to(device)
+    dummy_attention_mask = torch.ones((1, 128), dtype=torch.long).to(device)
+
+    # ONNX変換
+    torch.onnx.export(
+        model,
+        (dummy_input_ids, dummy_attention_mask),
+        model_file,
+        export_params=True,
+        opset_version=14,
+        input_names=["input_ids", "attention_mask"],
+        output_names=["logits"],
+        dynamic_axes={
+            "input_ids": {0: "batch", 1: "sequence"},
+            "attention_mask": {0: "batch", 1: "sequence"},
+            "logits": {0: "batch"},
+        }
+    )
+    print(f"✅ ONNX変換完了: {model_file}")
 
 if not os.path.exists(tokenizer_config_file):
     raise FileNotFoundError(f"❌ トークナイザー設定がありません: {tokenizer_config_file}")
