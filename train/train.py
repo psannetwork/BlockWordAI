@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Google Colab で実行
 
-!pip install fugashi[unidic-lite] transformers datasets tokenizers torch onnx scikit-learn
+!pip install fugashi[unidic-lite] transformers datasets tokenizers torch scikit-learn
 
 from google.colab import drive
 drive.mount('/content/drive')
@@ -9,16 +9,13 @@ drive.mount('/content/drive')
 import pandas as pd, random, numpy as np, torch, os, json
 from datetime import datetime
 from datasets import Dataset
-from transformers import (
-    AutoTokenizer,
-    AutoModelForSequenceClassification,
-    TrainingArguments,
-    Trainer,
-)
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer
 from sklearn.metrics import accuracy_score, f1_score
 import re, unicodedata
 
-# 乱数固定（再現性UP）
+# ----------------------------
+# 乱数固定（再現性向上）
+# ----------------------------
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
@@ -37,8 +34,7 @@ try:
     df = pd.DataFrame(data)
     print("✅ データ読み込み完了")
     print("データ数:", len(df))
-    print("ラベル分布:")
-    print(df['labels'].value_counts())
+    print("ラベル分布:\n", df['labels'].value_counts())
 except Exception as e:
     print(f"❌ データ読み込みエラー: {e}")
     exit()
@@ -49,7 +45,6 @@ except Exception as e:
 df = df.dropna(subset=['text'])
 df = df[df['text'].str.len() > 0].reset_index(drop=True)
 
-# ラベル判定ヘルパー（1=有害, 0=非有害）
 def is_toxic_label(v):
     try:
         return int(v) == 1
@@ -61,50 +56,58 @@ def is_toxic_label(v):
 df['is_toxic'] = df['labels'].apply(is_toxic_label)
 
 # ----------------------------
-# 3. 有害データ抽出＋文字崩し
+# 3. 文字バリエーション拡張
 # ----------------------------
 toxic_df = df[df['is_toxic']].copy()
 non_toxic_df = df[~df['is_toxic']].copy()
-
 print(f"抽出: 有害={len(toxic_df)} / 非有害={len(non_toxic_df)}")
 
-# 正規化関数
 def normalize_text(text):
     text = unicodedata.normalize("NFKC", str(text))
     text = re.sub(r'[○●〇◯*✱★☆⚪️・\u25CB\u25CF\u25A1\u25A0]', '', text)
     return text
 
-# 文字崩し関数
-def char_swap_variants(ch):
-    mapping = {
-        'ご': ['5','ｺﾞ','ゴ'],
-        'り': ['ﾘ','l','1','r'],
-        'ら': ['ﾗ','ra'],
-        'ごりら': ['ご○ら','ご*ら','5りら','ゴリラ','🐵ら'],
-        'あ': ['ｱ','ぁ'],
-        'い': ['ｲ','1','l'],
-        'お': ['0','〇','o'],
-    }
-    return mapping.get(ch, [])
+# 文字崩しバリエーションを強化
+char_variants = {
+    'あ': ['ｱ','ぁ','@','a'],
+    'い': ['ｲ','1','l','I','!','i'],
+    'う': ['ｳ','u'],
+    'え': ['ｴ','e'],
+    'お': ['0','〇','o','O'],
+    'か': ['ｶ','k'], 'き': ['ｷ','k','ki'], 'く': ['ｸ','ku'], 'け': ['ｹ','ke'], 'こ': ['ｺ','0','ko'],
+    'さ': ['ｻ','s'], 'し': ['ｼ','5','shi'], 'す': ['ｽ','su'], 'せ': ['ｾ','se'], 'そ': ['ｿ','so','5'],
+    'た': ['ﾀ','t'], 'ち': ['ﾁ','chi','c'], 'つ': ['ﾂ','っ','tsu'], 'て': ['ﾃ','te'], 'と': ['ﾄ','to','10','t'],
+    'な': ['ﾅ','n'], 'に': ['ﾆ','ni'], 'ぬ': ['ﾇ','nu'], 'ね': ['ﾈ','ne'], 'の': ['ﾉ','no'],
+    'は': ['ﾊ','h'], 'ひ': ['ﾋ','hi'], 'ふ': ['ﾌ','fu'], 'へ': ['ﾍ','he'], 'ほ': ['ﾎ','ho'],
+    'ま': ['ﾏ','m'], 'み': ['ﾐ','mi'], 'む': ['ﾑ','mu'], 'め': ['ﾒ','me'], 'も': ['ﾓ','mo'],
+    'や': ['ﾔ','ゃ','ya'], 'ゆ': ['ﾕ','ゅ','yu'], 'よ': ['ﾖ','ょ','yo'],
+    'ら': ['ﾗ','ra','l','r'], 'り': ['ﾘ','l','1','r'], 'る': ['ﾙ','ru'], 'れ': ['ﾚ','re'], 'ろ': ['ﾛ','ro'],
+    'わ': ['ﾜ','w','wa'], 'を': ['ｦ','wo'], 'ん': ['ﾝ','n','nn'],
+    ' ': ['　','_','-'],  # 空白も置換
+    'ー': ['ｰ','―','-'], # 長音も置換
+}
 
-def augment_text(text, prob=0.35):
+# 顔文字・シンプル絵文字の追加
+face_variants = ['☆','★','♪','💢','⚡','🔥','💀','🤬']
+
+def augment_text(text, prob=0.35, face_prob=0.05):
     text = normalize_text(text)
-    # 長い単語優先
-    if 'ごりら' in text and random.random() < prob:
-        return text.replace('ごりら', random.choice(['ご○ら','ご*ら','5りら','ゴリラ','🐵ら']))
     out = []
     for ch in text:
         if random.random() < prob:
-            variants = char_swap_variants(ch)
+            variants = char_variants.get(ch, [])
             if variants:
                 out.append(random.choice(variants))
             else:
                 out.append(ch)
         else:
             out.append(ch)
+    # ランダムで顔文字を挿入
+    if random.random() < face_prob:
+        pos = random.randint(0, len(out))
+        out.insert(pos, random.choice(face_variants))
     return ''.join(out)
 
-# 拡張データ生成
 def generate_augmented_toxics(toxic_df, multiplier=3, prob=0.35):
     aug_texts = []
     for _, row in toxic_df.iterrows():
@@ -113,10 +116,9 @@ def generate_augmented_toxics(toxic_df, multiplier=3, prob=0.35):
             aug_texts.append({'text': augment_text(orig, prob), 'labels': row['labels']})
     return pd.DataFrame(aug_texts)
 
-aug_df = generate_augmented_toxics(toxic_df, multiplier=3)
+aug_df = generate_augmented_toxics(toxic_df, multiplier=3, prob=0.35)
 print(f"生成: 拡張有害データ = {len(aug_df)} 件")
 
-# 元データ + 拡張データを合成
 final_df = pd.concat([df[['text','labels']], aug_df], ignore_index=True)
 final_df = final_df.sample(frac=1.0, random_state=seed).reset_index(drop=True)
 print(f"最終データ数: {len(final_df)}")
@@ -129,7 +131,7 @@ train_dataset = dataset["train"]
 eval_dataset = dataset["test"]
 
 # ----------------------------
-# 5. トークナイザーとモデル
+# 5. トークナイザー＆モデル準備
 # ----------------------------
 model_name = "cl-tohoku/bert-base-japanese-whole-word-masking"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -140,21 +142,15 @@ def tokenize_function(examples):
 train_dataset = train_dataset.map(tokenize_function, batched=True)
 eval_dataset = eval_dataset.map(tokenize_function, batched=True)
 
-# ----------------------------
-# 6. モデル準備＆評価関数
-# ----------------------------
 model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
 
 def compute_metrics(eval_pred):
     logits, labels = eval_pred
     preds = np.argmax(logits, axis=1)
-    return {
-        "accuracy": accuracy_score(labels, preds),
-        "f1": f1_score(labels, preds)
-    }
+    return {"accuracy": accuracy_score(labels, preds), "f1": f1_score(labels, preds)}
 
 # ----------------------------
-# 7. 学習設定
+# 6. 学習設定
 # ----------------------------
 date_str = datetime.now().strftime("%Y%m%d_%H%M%S")
 output_dir = f"/content/drive/MyDrive/toxicity_model_{date_str}"
@@ -169,7 +165,7 @@ training_args = TrainingArguments(
     weight_decay=0.01,
     logging_dir="./logs",
     logging_steps=100,
-    eval_strategy="epoch",  # ← ここを修正
+    eval_strategy="epoch",
     save_strategy="epoch",
     load_best_model_at_end=True,
     save_total_limit=2,
@@ -186,13 +182,15 @@ trainer = Trainer(
 )
 
 # ----------------------------
-# 8. 学習
+# 7. 学習実行
 # ----------------------------
 print("🔄 学習を開始します...")
 trainer.train()
 print("✅ 学習完了")
 
-# ベストモデル保存
+# ----------------------------
+# 8. モデル保存
+# ----------------------------
 model.save_pretrained(output_dir)
 tokenizer.save_pretrained(output_dir)
 print(f"✅ モデル保存完了: {output_dir}")
